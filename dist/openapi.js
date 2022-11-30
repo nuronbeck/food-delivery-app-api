@@ -5,13 +5,28 @@ var spec = {
     version: "1.0.0",
     title: "API Specification Example"
   },
+  
+  servers: [
+    { url: "http://localhost:8888" },
+    { url: "https://food-delivery-app-api.netlify.app" }
+  ],
 
   paths: {
-    "/auth/login": {
+    "/api/auth": {
+      post: {
+        summary: "My account",
+        operationId: "myAccount",
+        tags: ["Authentication"],
+        security: {
+          IdToken: []
+        },
+      },
+    },
+    "/api/auth/login": {
       post: {
         summary: "Sign-in account",
         operationId: "login",
-        tags: ["login"],
+        tags: ["Authentication"],
         requestBody: {
           content: {
             "application/json": {
@@ -24,6 +39,13 @@ var spec = {
   },
 
   components: {
+    securitySchemes: {
+      IdToken: {
+        in: "header",
+        type: "apiKey",
+        name: "Authorization"
+      }
+    },
     schemas: {
       UserLogin: {
         required: ["email", "password"],
