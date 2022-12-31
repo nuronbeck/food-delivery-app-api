@@ -1,6 +1,7 @@
 require('dotenv').config({ path: '../.env' })
 const express = require('express');
 const serverless = require('serverless-http');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 // const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
@@ -39,6 +40,7 @@ const authMiddleware = (req, res, next) => {
 const app = express();
 const router = express.Router();
 
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
