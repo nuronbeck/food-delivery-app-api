@@ -36,6 +36,20 @@ var spec = {
         }
       },
     },
+    "/api/auth/sign-up": {
+      post: {
+        summary: "Sign-up account",
+        operationId: "signUp",
+        tags: ["Authentication"],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserRegister" },
+            },
+          },
+        }
+      },
+    },
   },
 
   components: {
@@ -55,6 +69,42 @@ var spec = {
             type: "string",
             maxLength: 120,
             example: "your@example.com",
+          },
+          password: {
+            description: "User password",
+            type: "password",
+            minLength: 6,
+            maxLength: 20,
+            example: "123456789",
+          },
+        },
+      },
+      UserRegister: {
+        required: ["firstName", "lastName", "phoneNumber", "email", "password"],
+        properties: {
+          lastName: {
+            description: "User lastName",
+            type: "string",
+            maxLength: 120,
+            example: "Ivanov",
+          },
+          firstName: {
+            description: "User firstName",
+            type: "string",
+            maxLength: 120,
+            example: "Ivan",
+          },
+          email: {
+            description: "User email",
+            type: "string",
+            maxLength: 120,
+            example: "your@example.com",
+          },
+          phoneNumber: {
+            description: "User phoneNumber",
+            type: "string",
+            maxLength: 120,
+            example: "+123123123123",
           },
           password: {
             description: "User password",
