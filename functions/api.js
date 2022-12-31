@@ -47,21 +47,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // API Gateways
 router.post('/auth', authMiddleware, (req, res) => {
-  const { user: { iat, exp, ...user } } = req;
-  
+  try {
+    const { user: { iat, exp, ...user } } = req;
 
-  const token = jwt.sign({
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    phoneNumber: user.phoneNumber,
-  }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
+    const token = jwt.sign({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phoneNumber: user.phoneNumber,
+    }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
 
-  res.json({
-    user,
-    token
-  });
+    res.json({
+      user,
+      token
+    });
+  } catch (error) {
+    res.status(400).json(error);
+  }
 });
 
 router.post('/auth/login', async (req, res) => {
@@ -138,7 +141,7 @@ router.post('/auth/login', async (req, res) => {
       token
     });
   } catch (error) {
-    res.json(error)
+    res.status(400).json(error);
   }
 });
 
@@ -251,39 +254,42 @@ router.post('/auth/sign-up', async (req, res) => {
       token
     });
   } catch (error) {
-    res.json(error)
+    res.status(400).json(error);
   }
 })
 
 router.get('/products', async (req, res) => {  
-  
-  const { data = [] } = await client.query(
-    q.Let(
-      {
-        list: q.Map(
-          q.Paginate(q.Documents(q.Collection('products')), { size: 99999 }),
-          q.Lambda(x => q.Get(x))
-        )
-      },
-      {
-        data: q.Map(
-          q.Select(["data"], q.Var("list"), []),
-          q.Lambda(product => {
-            return ({
-              id: q.Select(["ref", "id"], product, undefined),
-              name: q.Select(["data", "name"], product, undefined),
-              deliveryTime: q.Select(["data", "deliveryTime"], product, undefined),
-              minimalOrder: q.Select(["data", "minimalOrder"], product, undefined),
-              image: q.Select(["data", "image"], product, undefined),
-              tags: q.Select(["data", "tags"], product, []),
-            })
-          }
-        ))
-      }
-    )
-  );
-  
-  res.json({ data });
+  try {
+    const { data = [] } = await client.query(
+      q.Let(
+        {
+          list: q.Map(
+            q.Paginate(q.Documents(q.Collection('products')), { size: 99999 }),
+            q.Lambda(x => q.Get(x))
+          )
+        },
+        {
+          data: q.Map(
+            q.Select(["data"], q.Var("list"), []),
+            q.Lambda(product => {
+              return ({
+                id: q.Select(["ref", "id"], product, undefined),
+                name: q.Select(["data", "name"], product, undefined),
+                deliveryTime: q.Select(["data", "deliveryTime"], product, undefined),
+                minimalOrder: q.Select(["data", "minimalOrder"], product, undefined),
+                image: q.Select(["data", "image"], product, undefined),
+                tags: q.Select(["data", "tags"], product, []),
+              })
+            }
+          ))
+        }
+      )
+    );
+    
+    res.json({ data });
+  } catch (error) {
+    res.status(400).json(error);
+  }
 });
 
 app.use('/api', router);
