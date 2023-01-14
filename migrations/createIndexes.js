@@ -45,6 +45,28 @@ async function createIndexes({ q, client }) {
     .then(() => successLogger('allProducts'))
     .catch(err => errorLogger('allProducts', err?.description))
 
+  const productCategoriesIndex = await client
+    .query(
+      q.CreateIndex({
+        name: 'productCategories',
+        source: q.Collection('product_categories'),
+        terms: [{ field: ['data', 'product_id'] }],
+      })
+    )
+    .then(() => successLogger('productCategories'))
+    .catch(err => errorLogger('productCategories', err?.description))
+
+  const categoryProductsIndex = await client
+    .query(
+      q.CreateIndex({
+        name: 'categoryProducts',
+        source: q.Collection('product_categories'),
+        terms: [{ field: ['data', 'category_id'] }],
+      })
+    )
+    .then(() => successLogger('categoryProducts'))
+    .catch(err => errorLogger('categoryProducts', err?.description))
+
   return await Promise.all([
     // Users collection indexes
     allUsersIndex,
@@ -54,7 +76,11 @@ async function createIndexes({ q, client }) {
     allCategoriesIndex,
 
     // Products collection indexes
-    allProductsIndex
+    allProductsIndex,
+
+    // ProductCategories collection indexes
+    productCategoriesIndex,
+    categoryProductsIndex
   ])
 }
 
