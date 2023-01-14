@@ -12,6 +12,7 @@ var spec = {
   ],
 
   paths: {
+    // Authorization routes
     "/api/auth": {
       post: {
         summary: "My account",
@@ -48,6 +49,38 @@ var spec = {
             },
           },
         }
+      },
+    },
+    "/api/auth/password-change": {
+      post: {
+        summary: "Signed in user password change",
+        operationId: "passwordChange",
+        tags: ["Authentication"],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserPasswordChange" },
+            },
+          },
+        }
+      },
+    },
+
+    // Categories routes
+    "/api/categories": {
+      get: {
+        summary: "Get categories",
+        operationId: "categories",
+        tags: ["Categories"],
+      },
+    },
+
+    // Products routes
+    "/api/products": {
+      get: {
+        summary: "Get products",
+        operationId: "products",
+        tags: ["Products"],
       },
     },
   },
@@ -112,6 +145,18 @@ var spec = {
             minLength: 6,
             maxLength: 20,
             example: "123456789",
+          },
+        },
+      },
+      UserPasswordChange: {
+        required: ["password"],
+        properties: {
+          password: {
+            description: "New password",
+            type: "password",
+            minLength: 6,
+            maxLength: 20,
+            example: "Ahj%456789",
           },
         },
       },

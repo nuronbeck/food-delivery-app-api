@@ -258,6 +258,95 @@ router.post('/auth/sign-up', async (req, res) => {
   }
 })
 
+router.post('/auth/password-change', authMiddleware, async (req, res) => {
+  try {
+    const { user: { iat, exp, ...user } } = req;
+
+    const errors = {};
+    const { password } = req.body;
+
+    if(!validator.isStrongPassword(password || '')){
+      errors.password = 'Field "password" is not strong enough!';
+    }
+
+    if(validator.isEmpty(password || '')){
+      errors.password = 'Field "password" is requied!';
+    }
+
+    if(Object.keys(errors).length){
+      throw ({
+        message: 'Payload fields validation error!',
+        errors
+      })
+    }
+
+    const { userExist, updatedUser } = await client.query(
+      q.Let(
+        {
+          userById: q.Select(["ref", "id"], q.Get(
+            q.Ref(
+              q.Collection('users'),
+              user.id
+            )
+          ), undefined),
+
+          userExist: q.IsString(q.Var("userById")),
+
+          updatedUser: 
+          q.If(
+            q.Var('userExist'),
+            q.Update(
+              q.Ref(q.Collection('users'), q.Var("userById")),
+              {
+                data: {
+                  password
+                }
+              }
+            ),
+            {}
+          )
+        },
+        {
+          userExist: q.Var('userExist'),
+          updatedUser: q.If(
+            q.Var('userExist'),
+            {
+              id: q.Select(["ref", "id"], q.Var('updatedUser'), undefined),
+              firstName: q.Select(["data", "firstName"], q.Var('updatedUser'), undefined),
+              lastName: q.Select(["data", "lastName"], q.Var('updatedUser'), undefined),
+              email: q.Select(["data", "email"], q.Var('updatedUser'), undefined),
+              phoneNumber: q.Select(["data", "phoneNumber"], q.Var('updatedUser'), undefined),
+            },
+            {}
+          )
+        }
+      )
+    );
+
+    if(!userExist){
+      throw ({
+        message: 'User is not exist!',
+        user
+      })
+    }
+
+    const token = jwt.sign({
+      id: updatedUser.id,
+      email: updatedUser.email,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      phoneNumber: updatedUser.phoneNumber,
+    }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
+
+    res.json({
+      user: updatedUser,
+      token
+    });
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
 router.get('/products', async (req, res) => {  
   try {
     const { data = [] } = await client.query(
@@ -278,7 +367,63 @@ router.get('/products', async (req, res) => {
                 deliveryTime: q.Select(["data", "deliveryTime"], product, undefined),
                 minimalOrder: q.Select(["data", "minimalOrder"], product, undefined),
                 image: q.Select(["data", "image"], product, undefined),
+                categories: q.Select(
+                  ['data'],
+                  q.Map(
+                    q.Paginate(q.Match(q.Index('productCategories'), q.Select(["ref", "id"], product, undefined)), { size: 99999 }),
+                    q.Lambda(
+                      'x',
+                      q.Let(
+                        {
+                          category: q.Get(
+                            q.Ref(
+                              q.Collection('categories'),
+                              q.Select(["data", "category_id"], q.Get(q.Var('x')))
+                            )
+                          )
+                        },
+                        {
+                          id: q.Select(["ref", "id"], q.Var("category"), undefined),
+                          name: q.Select(["data", "name"], q.Var("category"), undefined),
+                          image: q.Select(["data", "image"], q.Var("category"), undefined),
+                        }
+                      )
+                    )
+                  ),
+                  []
+                ),
                 tags: q.Select(["data", "tags"], product, []),
+              })
+            }
+          ))
+        }
+      )
+    );
+    
+    res.json({ data });
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
+router.get('/categories', async (_, res) => {  
+  try {
+    const { data = [] } = await client.query(
+      q.Let(
+        {
+          list: q.Map(
+            q.Paginate(q.Documents(q.Collection('categories')), { size: 99999 }),
+            q.Lambda(x => q.Get(x))
+          )
+        },
+        {
+          data: q.Map(
+            q.Select(["data"], q.Var("list"), []),
+            q.Lambda(category => {
+              return ({
+                id: q.Select(["ref", "id"], category, undefined),
+                name: q.Select(["data", "name"], category, undefined),
+                image: q.Select(["data", "image"], category, undefined),
               })
             }
           ))

@@ -4,7 +4,6 @@
   "description": "Mentoring food delivery app with express serverless API.",
   "main": "./src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "db-init": "node ./migrations/index.js initial",
     "db-seed": "node ./migrations/index.js seed",
     "db-clean": "node ./migrations/index.js clean"
