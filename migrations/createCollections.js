@@ -13,8 +13,13 @@ async function createCollections({ q, client }) {
     .query(q.CreateCollection({ name: 'products' }))
     .then(() => successLogger('products'))
     .catch(err => errorLogger('products', err?.description))
+    
+  const productCategories = await client
+    .query(q.CreateCollection({ name: 'product_categories' }))
+    .then(() => successLogger('product_categories'))
+    .catch(err => errorLogger('product_categories', err?.description))
 
-  return await Promise.all([ users, categories, products ])
+  return await Promise.all([ users, categories, products, productCategories ])
 }
 
 function successLogger(entity = '') {

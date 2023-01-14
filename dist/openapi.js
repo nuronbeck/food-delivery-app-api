@@ -12,6 +12,7 @@ var spec = {
   ],
 
   paths: {
+    // Authorization routes
     "/api/auth": {
       post: {
         summary: "My account",
@@ -34,6 +35,52 @@ var spec = {
             },
           },
         }
+      },
+    },
+    "/api/auth/sign-up": {
+      post: {
+        summary: "Sign-up account",
+        operationId: "signUp",
+        tags: ["Authentication"],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserRegister" },
+            },
+          },
+        }
+      },
+    },
+    "/api/auth/password-change": {
+      post: {
+        summary: "Signed in user password change",
+        operationId: "passwordChange",
+        tags: ["Authentication"],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserPasswordChange" },
+            },
+          },
+        }
+      },
+    },
+
+    // Categories routes
+    "/api/categories": {
+      get: {
+        summary: "Get categories",
+        operationId: "categories",
+        tags: ["Categories"],
+      },
+    },
+
+    // Products routes
+    "/api/products": {
+      get: {
+        summary: "Get products",
+        operationId: "products",
+        tags: ["Products"],
       },
     },
   },
@@ -62,6 +109,54 @@ var spec = {
             minLength: 6,
             maxLength: 20,
             example: "123456789",
+          },
+        },
+      },
+      UserRegister: {
+        required: ["firstName", "lastName", "phoneNumber", "email", "password"],
+        properties: {
+          lastName: {
+            description: "User lastName",
+            type: "string",
+            maxLength: 120,
+            example: "Ivanov",
+          },
+          firstName: {
+            description: "User firstName",
+            type: "string",
+            maxLength: 120,
+            example: "Ivan",
+          },
+          email: {
+            description: "User email",
+            type: "string",
+            maxLength: 120,
+            example: "your@example.com",
+          },
+          phoneNumber: {
+            description: "User phoneNumber",
+            type: "string",
+            maxLength: 120,
+            example: "+123123123123",
+          },
+          password: {
+            description: "User password",
+            type: "password",
+            minLength: 6,
+            maxLength: 20,
+            example: "123456789",
+          },
+        },
+      },
+      UserPasswordChange: {
+        required: ["password"],
+        properties: {
+          password: {
+            description: "New password",
+            type: "password",
+            minLength: 6,
+            maxLength: 20,
+            example: "Ahj%456789",
           },
         },
       },
