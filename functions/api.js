@@ -7,6 +7,10 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 
+// const axios = require("axios");
+// const fs = require("fs");
+// const mustache = require('mustache');
+
 const faunadb = require('faunadb');
 const q = faunadb.query;
 
@@ -17,6 +21,21 @@ const client = new faunadb.Client({
   port: 443,
   scheme: 'https',
 });
+
+// Mailer API settings
+// const API_EMAIL_BASE_URL = "https://api.sendinblue.com";
+// const RECEPTION_EMAIL = process.env.CONTACT_EMAIL;
+// const FROM_NAME = process.env.MAILER_NAME;
+// const FROM_EMAIL = process.env.MAILER_EMAIL;
+
+// const MAILER_API_SERVICE = axios.create({
+//   baseURL: API_EMAIL_BASE_URL,
+//   headers: {
+//     'Accept': 'application/json',
+//     'Content-Type': 'application/json',
+//     'api-key': process.env.SINB_API_KEY
+//   }
+// });
 
 // App middlewares
 const authMiddleware = (req, res, next) => {
@@ -248,6 +267,30 @@ router.post('/auth/sign-up', async (req, res) => {
       phoneNumber: user.phoneNumber,
     }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
 
+    // try {
+    //   const templateHtml = fs.readFileSync(require.resolve('./validate-email-template.html'), 'utf8');
+    //   const emailHtml = mustache.render(templateHtml, {
+    //     name: user.firstName,
+    //     email: user.email,
+    //     phone: user.phoneNumber,
+    //     message: "Welcome text message"
+    //   });
+
+    //   await MAILER_API_SERVICE.post(`/v3/smtp/email`, {
+    //     sender: {
+    //       name: FROM_NAME,
+    //       email: FROM_EMAIL
+    //     },
+    //     to: [{
+    //       email: RECEPTION_EMAIL
+    //     }],
+    //     subject: 'New message received from website',
+    //     htmlContent: emailHtml
+    //   });
+    // } catch (error) {
+    //   console.log(error);
+    // }
+
     res.json({
       message: "User is signed up successfully!",
       user,
@@ -438,6 +481,6 @@ router.get('/categories', async (_, res) => {
 });
 
 app.use('/api', router);
-app.use('*', (_, res) => res.send(404));
+app.use('*', (_, res) => res.sendStatus(404));
 
 module.exports.handler = serverless(app);
