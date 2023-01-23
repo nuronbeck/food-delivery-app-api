@@ -7,6 +7,8 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 
+const sendEmail = require('../utils/sendEmail');
+
 // const axios = require("axios");
 // const fs = require("fs");
 // const mustache = require('mustache');
@@ -23,6 +25,7 @@ const client = new faunadb.Client({
 });
 
 // Mailer API settings
+// const SINB_API_KEY = process.env.SINB_API_KEY;
 // const API_EMAIL_BASE_URL = "https://api.sendinblue.com";
 // const RECEPTION_EMAIL = process.env.CONTACT_EMAIL;
 // const FROM_NAME = process.env.MAILER_NAME;
@@ -33,7 +36,7 @@ const client = new faunadb.Client({
 //   headers: {
 //     'Accept': 'application/json',
 //     'Content-Type': 'application/json',
-//     'api-key': process.env.SINB_API_KEY
+//     'api-key': SINB_API_KEY
 //   }
 // });
 
@@ -65,9 +68,35 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // API Gateways
-router.post('/auth', authMiddleware, (req, res) => {
+router.post('/auth', authMiddleware, async (req, res) => {
   try {
-    const { user: { iat, exp, ...user } } = req;
+    const { user: { email } } = req;
+
+    const { user } = await client.query(
+      q.Let(
+        {
+          findUser: q.Select(
+            ['data'],
+            q.Map(
+              q.Paginate(q.Match(q.Index('userByEmail'), email), { size: 1 }),
+              q.Lambda('x', q.Get(q.Var('x')))
+            ),
+            []
+          ),
+        },
+        {
+          user: {
+            id: q.Select([0, "ref", "id"], q.Var('findUser'), undefined),
+            firstName: q.Select([0, "data", "firstName"], q.Var('findUser'), undefined),
+            lastName: q.Select([0, "data", "lastName"], q.Var('findUser'), undefined),
+            email: q.Select([0, "data", "email"], q.Var('findUser'), undefined),
+            phoneNumber: q.Select([0, "data", "phoneNumber"], q.Var('findUser'), undefined),
+            password: q.Select([0, "data", "password"], q.Var('findUser'), undefined),
+            isVerified: q.Select([0, "data", "isVerified"], q.Var('findUser'), false),
+          },
+        }
+      )
+    );
 
     const token = jwt.sign({
       id: user.id,
@@ -75,7 +104,10 @@ router.post('/auth', authMiddleware, (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phoneNumber: user.phoneNumber,
+      isVerified: user.isVerified,
     }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
+
+    delete user.password;
 
     res.json({
       user,
@@ -130,6 +162,7 @@ router.post('/auth/login', async (req, res) => {
               email: q.Select([0, "data", "email"], q.Var('findUser'), undefined),
               phoneNumber: q.Select([0, "data", "phoneNumber"], q.Var('findUser'), undefined),
               password: q.Select([0, "data", "password"], q.Var('findUser'), undefined),
+              isVerified: q.Select([0, "data", "isVerified"], q.Var('findUser'), false),
             },
             {}
           )
@@ -229,7 +262,8 @@ router.post('/auth/sign-up', async (req, res) => {
                 lastName,
                 email,
                 password,
-                phoneNumber
+                phoneNumber,
+                isVerified: false
               }
             }),
             {}
@@ -245,6 +279,7 @@ router.post('/auth/sign-up', async (req, res) => {
               lastName: q.Select(["data", "lastName"], q.Var('createUser'), undefined),
               email: q.Select(["data", "email"], q.Var('createUser'), undefined),
               phoneNumber: q.Select(["data", "phoneNumber"], q.Var('createUser'), undefined),
+              isVerified: q.Select(["data", "isVerified"], q.Var('createUser'), false),
             },
             {}
           )
@@ -265,31 +300,36 @@ router.post('/auth/sign-up', async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       phoneNumber: user.phoneNumber,
+      isVerified: user.isVerified,
     }, process.env.JWT_SECRET_TOKEN, { expiresIn: "5h" });
 
     // try {
     //   const templateHtml = fs.readFileSync(require.resolve('./validate-email-template.html'), 'utf8');
     //   const emailHtml = mustache.render(templateHtml, {
-    //     name: user.firstName,
-    //     email: user.email,
-    //     phone: user.phoneNumber,
-    //     message: "Welcome text message"
+    //     name: user.name,
+    //     email: user.email
     //   });
-
+  
     //   await MAILER_API_SERVICE.post(`/v3/smtp/email`, {
     //     sender: {
     //       name: FROM_NAME,
     //       email: FROM_EMAIL
     //     },
     //     to: [{
-    //       email: RECEPTION_EMAIL
+    //       email: user.email,
     //     }],
-    //     subject: 'New message received from website',
+    //     subject: 'Food delivery app | Verify your email',
     //     htmlContent: emailHtml
     //   });
     // } catch (error) {
     //   console.log(error);
     // }
+
+    try {
+      await sendEmail({ name: "Nurbek", email: "nuronbeck@gmail.com" });
+    } catch (errorMailing) {
+      console.log('errorMailing => ', errorMailing);
+    }
 
     res.json({
       message: "User is signed up successfully!",
@@ -359,6 +399,7 @@ router.post('/auth/password-change', authMiddleware, async (req, res) => {
               lastName: q.Select(["data", "lastName"], q.Var('updatedUser'), undefined),
               email: q.Select(["data", "email"], q.Var('updatedUser'), undefined),
               phoneNumber: q.Select(["data", "phoneNumber"], q.Var('updatedUser'), undefined),
+              isVerified: q.Select(["data", "isVerified"], q.Var('updatedUser'), false),
             },
             {}
           )
