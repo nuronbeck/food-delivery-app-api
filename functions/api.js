@@ -17,7 +17,7 @@ const GMAIL_APP_EMAIL = process.env.GMAIL_APP_EMAIL;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const GMAIL_APP_TEST_RECEIVER = process.env.GMAIL_APP_TEST_RECEIVER;
 
-const templateHtml = fs.readFileSync(require.resolve('./validate-email-template.html'), 'utf8');
+const templateHtml = fs.readFileSync(require.resolve('./templates/validate-email-template.html'), 'utf8');
 
 const sendEmail = async ({ name = 'User', email: receiverEmail = GMAIL_APP_TEST_RECEIVER }) => {
   let transporter = nodemailer.createTransport({
