@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 
-const sendEmail = require('../utils/sendEmail');
+const sendEmail = require('./sendEmail');
 
 // const axios = require("axios");
 // const fs = require("fs");
